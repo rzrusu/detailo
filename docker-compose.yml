@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # --- Eureka Server Service ---
+  eureka-server:
+    # Tells Docker to build the image from the './eureka-server' folder
+    build:
+      context: ./eureka-server
+    # Sets the container name for easy reference
+    container_name: eureka-server
+    # Maps your machine's port 8761 to the container's port 8761
+    ports:
+      - "8761:8761"
+
+  # --- Config Server Service ---
+  config-server:
+    build:
+      context: ./config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    # This is the CRITICAL part:
+    environment:
+      # 1. Override Eureka URL:
+      #    Instead of 'localhost', we use the service name 'eureka-server'
+      #    so the container can find the other container.
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
+
+      # 2. Override the config repo path:
+      #    We will tell the container to look for the repo at '/config-repo'
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS: file:///config-repo
+
+    volumes:
+      # This maps your local config repo folder...
+      # !! REPLACE THIS with the real path on your computer !!
+      - /c/Users/rzrus/OneDrive/Desktop/detailo-config:/config-repo
+
+    # This ensures Eureka is started *before* this service
+    depends_on:
+      - eureka-server
