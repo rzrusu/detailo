@@ -12,6 +12,12 @@ services:
       - "8761:8761"
     networks:
       - detailo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
 
   # --- Config Server Service ---
   config-server:
@@ -53,6 +59,12 @@ services:
       - detailo-network
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d identity_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
   # --- Identity Service ---
   identity-service:
@@ -69,9 +81,9 @@ services:
     # --- UPDATED DEPENDS_ON ---
     depends_on:
       postgres-db:
-        condition: service_started
+        condition: service_healthy
       eureka-server:
-        condition: service_started
+        condition: service_healthy
       config-server:
         condition: service_healthy # Wait for healthcheck to pass
 
