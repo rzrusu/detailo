@@ -27,8 +27,16 @@ WORKDIR /app
 # We use a wildcard to avoid hard-coding the version
 COPY --from=build /app/target/*.jar app.jar
 
+# Create a non-root user and group
+RUN groupadd -r appuser && \
+    useradd -r -g appuser -d /home/appuser -m -s /bin/bash appuser && \
+    chown -R appuser:appuser /app
+
 # Expose the port that the application will run on
 EXPOSE 8081
+
+# Switch to non-root user
+USER appuser
 
 # The command to run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
