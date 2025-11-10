@@ -1,16 +1,17 @@
 version: '3.8'
 
+# 1. TOP-LEVEL SERVICES
 services:
+
   # --- Eureka Server Service ---
   eureka-server:
-    # Tells Docker to build the image from the './eureka-server' folder
     build:
       context: ./eureka-server
-    # Sets the container name for easy reference
     container_name: eureka-server
-    # Maps your machine's port 8761 to the container's port 8761
     ports:
       - "8761:8761"
+    networks:
+      - detailo-network
 
   # --- Config Server Service ---
   config-server:
@@ -19,22 +20,67 @@ services:
     container_name: config-server
     ports:
       - "8888:8888"
-    # This is the CRITICAL part:
     environment:
-      # 1. Override Eureka URL:
-      #    Instead of 'localhost', we use the service name 'eureka-server'
-      #    so the container can find the other container.
-      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka-server:8761/eureka/
-
-      # 2. Override the config repo path:
-      #    We will tell the container to look for the repo at '/config-repo'
-      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS: file:///config-repo
-
+      - SPRING_PROFILES_ACTIVE=native
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+      - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS=file:///config-repo
     volumes:
-      # This maps your local config repo folder...
-      # !! REPLACE THIS with the real path on your computer !!
       - /c/Users/rzrus/OneDrive/Desktop/detailo-config:/config-repo
-
-    # This ensures Eureka is started *before* this service
     depends_on:
       - eureka-server
+    networks:
+      - detailo-network
+    # --- ADD THIS HEALTHCHECK ---
+    healthcheck:
+      # Use curl to check the /actuator/health endpoint
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 10s   # Check every 10 seconds
+      timeout: 5s     # Wait 5 seconds for a response
+      retries: 5      # Try 5 times before failing
+      start_period: 20s # Give it 20 seconds to start up before checking
+
+  # --- PostgreSQL Database Service ---
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=identity_db
+    ports:
+      - "5432:5432"
+    networks:
+      - detailo-network
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # --- Identity Service ---
+  identity-service:
+    build:
+      context: ./identity-service
+    container_name: identity-service
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+    networks:
+      - detailo-network
+    # --- UPDATED DEPENDS_ON ---
+    depends_on:
+      postgres-db:
+        condition: service_started
+      eureka-server:
+        condition: service_started
+      config-server:
+        condition: service_healthy # Wait for healthcheck to pass
+
+# 2. TOP-LEVEL NETWORKS
+networks:
+  detailo-network:
+    driver: bridge
+
+# 3. TOP-LEVEL VOLUMES
+volumes:
+  postgres_data:
+    driver: local
