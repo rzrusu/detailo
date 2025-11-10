@@ -18,6 +18,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -79,13 +81,19 @@ public class SecurityConfig {
 
     // 3. UserDetailsService: Who can log in? (Start with in-memory, move to DB later)
     @Bean
-    public UserDetailsService userDetailsService() {
-        UserDetails user = User.withDefaultPasswordEncoder()
+    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
+        UserDetails user = User.builder()
                 .username("admin")
-                .password("password")
+                .password(passwordEncoder.encode("password"))
                 .roles("ADMIN")
                 .build();
         return new InMemoryUserDetailsManager(user);
+    }
+
+    // PasswordEncoder bean for encoding passwords
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
 
     // 4. RegisteredClientRepository: Who can ask for tokens? (e.g., your React App)
