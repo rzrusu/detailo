@@ -16,9 +16,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configuration.OAuth2AuthorizationServerConfiguration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -29,10 +26,17 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
+import org.springframework.boot.CommandLineRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.detailo.identity_service.models.User;
+import com.detailo.identity_service.models.Role;
+import com.detailo.identity_service.repositories.UserRepository;
+import com.detailo.identity_service.repositories.RoleRepository;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -43,6 +47,8 @@ import java.util.UUID;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     // 1. Security Filter Chain for Protocol Endpoints (Token generation, etc.)
     @Bean
@@ -78,17 +84,6 @@ public class SecurityConfig {
                 .formLogin(Customizer.withDefaults());
 
         return http.build();
-    }
-
-    // 3. UserDetailsService: Who can log in? (Start with in-memory, move to DB later)
-    @Bean
-    public UserDetailsService userDetailsService(PasswordEncoder passwordEncoder) {
-        UserDetails user = User.builder()
-                .username("admin")
-                .password(passwordEncoder.encode("password"))
-                .roles("ADMIN")
-                .build();
-        return new InMemoryUserDetailsManager(user);
     }
 
     // PasswordEncoder bean for encoding passwords
@@ -159,5 +154,35 @@ public class SecurityConfig {
     @Bean
     public AuthorizationServerSettings authorizationServerSettings() {
         return AuthorizationServerSettings.builder().build();
+    }
+
+    // 7. CommandLineRunner: Seed test user and roles on startup (for development)
+    @Bean
+    public CommandLineRunner seedTestUser(
+            UserRepository userRepository,
+            RoleRepository roleRepository,
+            PasswordEncoder passwordEncoder) {
+        return args -> {
+            // Create ADMIN role if it doesn't exist
+            Role adminRole = roleRepository.findByName("ROLE_ADMIN")
+                    .orElseGet(() -> {
+                        Role role = new Role("ROLE_ADMIN");
+                        return roleRepository.save(role);
+                    });
+
+            // Create test user if it doesn't exist
+            String testEmail = "admin@test.com";
+            if (userRepository.findByEmail(testEmail).isEmpty()) {
+                User testUser = new User();
+                testUser.setEmail(testEmail);
+                testUser.setPassword(passwordEncoder.encode("password"));
+                testUser.setFirstName("Admin");
+                testUser.setLastName("User");
+                testUser.setEnabled(true);
+                testUser.addRole(adminRole);
+                userRepository.save(testUser);
+                logger.info("Test user created: {} / password", testEmail);
+            }
+        };
     }
 }
