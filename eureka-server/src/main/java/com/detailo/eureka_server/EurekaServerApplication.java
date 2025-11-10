@@ -1,4 +1,4 @@
-package com.rzrusu.eureka_server;
+package com.detailo.eureka_server;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
