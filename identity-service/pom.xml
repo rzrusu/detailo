@@ -6,7 +6,7 @@
 		<groupId>com.detailo</groupId>
 		<artifactId>detailo-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
-		<relativePath/> <!-- lookup parent from repository -->
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 	<groupId>com.detailo</groupId>
 	<artifactId>identity-service</artifactId>

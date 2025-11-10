@@ -5,14 +5,17 @@ FROM maven:3.9-eclipse-temurin-17 AS build
 # Set the working directory inside the container
 WORKDIR /app
 
+# Copy the parent POM first (needed for multi-module builds)
+COPY pom.xml ./pom.xml
+
 # Copy the service's pom.xml
-COPY pom.xml .
+COPY identity-service/pom.xml ./identity-service/pom.xml
 
 # Copy the rest of *this service's* source code
-COPY src ./src
+COPY identity-service/src ./identity-service/src
 
-# Run the Maven build to create the .jar file
-# -DskipTests is good practice for container builds
+# Change to the service directory and run the Maven build
+WORKDIR /app/identity-service
 RUN mvn clean install -DskipTests
 
 # --- Stage 2: Create the Final, Lightweight Image ---
@@ -25,7 +28,7 @@ WORKDIR /app
 # Copy ONLY the built .jar file from the 'build' stage
 # The path is target/<artifactId>-<version>.jar
 # We use a wildcard to avoid hard-coding the version
-COPY --from=build /app/target/*.jar app.jar
+COPY --from=build /app/identity-service/target/*.jar app.jar
 
 # Create a non-root user and group
 RUN groupadd -r appuser && \

@@ -69,7 +69,8 @@ services:
   # --- Identity Service ---
   identity-service:
     build:
-      context: ./identity-service
+      context: .
+      dockerfile: ./identity-service/Dockerfile
     container_name: identity-service
     ports:
       - "8081:8081"
