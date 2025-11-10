@@ -30,6 +30,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.util.matcher.MediaTypeRequestMatcher;
 import org.springframework.boot.CommandLineRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.detailo.identity_service.models.User;
 import com.detailo.identity_service.models.Role;
@@ -45,6 +47,8 @@ import java.util.UUID;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    private static final Logger logger = LoggerFactory.getLogger(SecurityConfig.class);
 
     // 1. Security Filter Chain for Protocol Endpoints (Token generation, etc.)
     @Bean
@@ -177,7 +181,7 @@ public class SecurityConfig {
                 testUser.setEnabled(true);
                 testUser.addRole(adminRole);
                 userRepository.save(testUser);
-                System.out.println("Test user created: " + testEmail + " / password");
+                logger.info("Test user created: {} / password", testEmail);
             }
         };
     }
