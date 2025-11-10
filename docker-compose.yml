@@ -31,7 +31,7 @@ services:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCHLOCATIONS=file:///config-repo
     volumes:
-      - /c/Users/rzrus/OneDrive/Desktop/detailo-config:/config-repo
+      - ${CONFIG_REPO:-./config-repo}:/config-repo
     depends_on:
       - eureka-server
     networks:
