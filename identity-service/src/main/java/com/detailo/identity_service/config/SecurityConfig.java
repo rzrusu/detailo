@@ -5,6 +5,7 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.Ordered;
@@ -98,15 +99,24 @@ public class SecurityConfig {
 
     // 4. RegisteredClientRepository: Who can ask for tokens? (e.g., your React App)
     @Bean
-    public RegisteredClientRepository registeredClientRepository() {
-        RegisteredClient reactClient = RegisteredClient.withId(UUID.randomUUID().toString())
-                .clientId("detailo-web-client")
-                .clientSecret("{noop}secret") // Use {noop} for plain text during dev
+    public RegisteredClientRepository registeredClientRepository(
+            PasswordEncoder passwordEncoder,
+            @Value("${detailo.oauth.client.registration-id}") String registrationId,
+            @Value("${detailo.oauth.client.client-id}") String clientId,
+            @Value("${detailo.oauth.client.client-secret}") String clientSecret,
+            @Value("${detailo.oauth.client.redirect-uri}") String redirectUri,
+            @Value("${detailo.oauth.client.post-logout-redirect-uri}") String postLogoutRedirectUri
+    ) {
+        String encodedSecret = clientSecret.startsWith("$2") ? clientSecret : passwordEncoder.encode(clientSecret);
+
+        RegisteredClient reactClient = RegisteredClient.withId(registrationId)
+                .clientId(clientId)
+                .clientSecret(encodedSecret)
                 .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                .redirectUri("http://127.0.0.1:8080/login/oauth2/code/detailo-web-client") // Where to redirect after login
-                .postLogoutRedirectUri("http://127.0.0.1:8080/")
+                .redirectUri(redirectUri) // Where to redirect after login
+                .postLogoutRedirectUri(postLogoutRedirectUri)
                 .scope(OidcScopes.OPENID)
                 .scope(OidcScopes.PROFILE)
                 .scope("detailo.read")
