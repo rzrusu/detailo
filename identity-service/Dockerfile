@@ -1,6 +1,6 @@
 # --- Stage 1: Build the Application ---
-# Use an official Maven image that includes Java 17
-FROM maven:3.9-eclipse-temurin-17 AS build
+# Use an official Maven image that includes Java 25
+FROM maven:3.9-eclipse-temurin-25 AS build
 
 # Set the working directory inside the container
 WORKDIR /app
@@ -22,8 +22,8 @@ WORKDIR /app/identity-service
 RUN mvn clean install -DskipTests
 
 # --- Stage 2: Create the Final, Lightweight Image ---
-# Use a minimal Java 17 JRE image
-FROM eclipse-temurin:17-jre-jammy
+# Use a minimal Java 25 JRE image
+FROM eclipse-temurin:25-jre-jammy
 
 # Set the working directory
 WORKDIR /app
