@@ -14,6 +14,9 @@ COPY identity-service/pom.xml ./identity-service/pom.xml
 # Copy the rest of *this service's* source code
 COPY identity-service/src ./identity-service/src
 
+# Install curl for healthcheck (optional but good practice)
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Change to the service directory and run the Maven build
 WORKDIR /app/identity-service
 RUN mvn clean install -DskipTests

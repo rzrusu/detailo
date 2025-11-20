@@ -29,6 +29,9 @@ WORKDIR /app
 # We use a wildcard to avoid hard-coding the version
 COPY --from=build /app/target/*.jar app.jar
 
+# Install curl for healthcheck
+RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+
 # Expose the port that the application will run on
 # (This is just documentation; 8761 is for Eureka, 8888 for Config, etc.)
 # The actual port is set in your application.properties

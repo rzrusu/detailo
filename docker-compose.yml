@@ -33,7 +33,8 @@ services:
     volumes:
       - ${CONFIG_REPO:-./config-repo}:/config-repo
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
     networks:
       - detailo-network
     # --- ADD THIS HEALTHCHECK ---
@@ -77,6 +78,7 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_CLOUD_CONFIG_URI=http://config-server:8888
+      - EUREKA_DEFAULT_ZONE=http://eureka-server:8761/eureka/
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-db:5432/identity_db
       - SPRING_DATASOURCE_USERNAME=postgres
